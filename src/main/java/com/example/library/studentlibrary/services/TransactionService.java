@@ -46,7 +46,37 @@ public class TransactionService {
 
         //Note that the error message should match exactly in all cases
 
-       return null; //return transactionId instead
+        Transaction transaction = new Transaction() ;
+        if(cardRepository5.existsById(cardId) && bookRepository5.existsById(bookId))
+        {
+            Book book = bookRepository5.findById(bookId).get();
+            Card card = cardRepository5.findById(cardId).get();
+            if(book.isAvailable())
+            {
+                if(card.getCardStatus() == CardStatus.ACTIVATED)
+                {
+                    List<Book> booklist = card.getBooks();
+                    if(booklist.size()< max_allowed_books)
+                    {
+                        booklist.add(book) ;
+                        card.setBooks(booklist);
+                        book.setAvailable(false);
+                        transaction.setBook(book);
+                        transaction.setCard(card);
+                        transaction.setIssueOperation(true);
+                        transaction.setTransactionStatus(TransactionStatus.SUCCESSFUL);
+                        transactionRepository5.save(transaction) ;
+                    }
+                    else
+                    {throw new Exception("Book limit has reached for this card");}
+                }
+                else
+                {throw new Exception("Card is invalid");}
+            }
+            else{throw new Exception("Book is either unavailable or not present");}
+        }
+
+       return transaction; //return transactionId instead
     }
 
     public Transaction returnBook(int cardId, int bookId) throws Exception{
@@ -54,11 +84,34 @@ public class TransactionService {
         List<Transaction> transactions = transactionRepository5.find(cardId, bookId,TransactionStatus.SUCCESSFUL, true);
         Transaction transaction = transactions.get(transactions.size() - 1);
 
+        Book book = bookRepository5.findById(bookId).get();
+        Card card = cardRepository5.findById(cardId).get() ;
+
+        Transaction returnTransaction = new Transaction() ;
+        returnTransaction.setBook(book);
+        returnTransaction.setCard(card);
+        returnTransaction.setIssueOperation(false);
+        returnTransaction.setTransactionStatus(TransactionStatus.SUCCESSFUL);
+        book.setAvailable(true);
+
+        List<Book> booklist = card.getBooks();
+        for(Book b:booklist)
+        {
+            if(b.getId()== bookId)
+            booklist.remove(b) ;
+            break ;
+        }
+
+        transactionRepository5.save(returnTransaction);
+
+
+
+
         //for the given transaction calculate the fine amount considering the book has been returned exactly when this function is called
         //make the book available for other users
         //make a new transaction for return book which contains the fine amount as well
 
-        Transaction returnBookTransaction  = null;
+        Transaction returnBookTransaction  = returnTransaction;
         return returnBookTransaction; //return the transaction after updating all details
     }
 }
