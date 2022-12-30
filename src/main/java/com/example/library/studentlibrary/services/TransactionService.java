@@ -76,7 +76,7 @@ public class TransactionService {
             else{throw new Exception("Book is either unavailable or not present");}
         }
 
-       return transaction; //return transactionId instead
+       return transaction.getTransactionId(); //return transactionId instead
     }
 
     public Transaction returnBook(int cardId, int bookId) throws Exception{
