@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,8 @@ public class TransactionService {
                 if(card.getCardStatus() == CardStatus.ACTIVATED)
                 {
                     List<Book> booklist = card.getBooks();
+                    if(booklist== null)
+                    booklist = new ArrayList<>();
                     if(booklist.size()< max_allowed_books)
                     {
                         booklist.add(book) ;
@@ -92,6 +95,24 @@ public class TransactionService {
         returnTransaction.setCard(card);
         returnTransaction.setIssueOperation(false);
         returnTransaction.setTransactionStatus(TransactionStatus.SUCCESSFUL);
+
+        Date issueDate = transaction.getTransactionDate();
+        Date returnDate = new Date();
+
+        long date1 = issueDate.getTime();
+        long date2 = returnDate.getTime();
+
+        long timeDiff = Math.abs(date2 - date1);
+
+        long daysDiff = TimeUnit.DAYS.convert(timeDiff, TimeUnit.MILLISECONDS);
+
+        int delay = (int)daysDiff - getMax_allowed_days;
+        int fine =0;
+        if(delay > 0)
+        {
+            fine = delay*fine_per_day;
+        }
+        returnTransaction.setFineAmount(fine);
         book.setAvailable(true);
 
         List<Book> booklist = card.getBooks();
